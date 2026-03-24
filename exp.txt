@@ -2,3 +2,4 @@ selama dalam repo partai wilhelmus ada perubahan, file akan disimpan dari versio
 lalu untuk file baru akan disimpan ke repo awal
 simpan partai wilhelmus per 24
 test123
+222
