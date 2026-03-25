@@ -1,4 +1,3 @@
 selama dalam repo partai wilhelmus ada perubahan, file akan disimpan dari version lama ke sini
 lalu untuk file baru akan disimpan ke repo awal
-simpan partai wilhelmus per 24
 
