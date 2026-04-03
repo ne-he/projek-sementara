@@ -86,13 +86,28 @@ struct ContentView: View {
 struct NoteRow: View {
     let note: Note
 
+    static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "dd MMM yyyy"
+        return f
+    }()
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(note.title)
-                .font(.headline)
-            Text(note.createdAt, style: .date)
-                .font(.caption)
-                .foregroundColor(.secondary)
+        HStack(spacing: 12) {
+            Image(systemName: "note.text")
+                .foregroundColor(.accentColor)
+                .frame(width: 32, height: 32)
+                .background(Color.accentColor.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(note.title)
+                    .font(.headline)
+                    .fontWeight(.bold)
+                Text(NoteRow.dateFormatter.string(from: note.createdAt))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
         }
         .padding(.vertical, 4)
     }
