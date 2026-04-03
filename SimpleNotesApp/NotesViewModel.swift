@@ -18,6 +18,13 @@ class NotesViewModel: ObservableObject {
         notes.remove(atOffsets: offsets)
     }
 
+    func updateNote(id: UUID, title: String, content: String) {
+        if let index = notes.firstIndex(where: { $0.id == id }) {
+            notes[index].title = title
+            notes[index].content = content
+        }
+    }
+
     func saveNotes() {
         saveToUserDefaults(notes: notes)
     }
