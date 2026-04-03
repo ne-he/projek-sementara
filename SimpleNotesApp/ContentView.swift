@@ -3,6 +3,8 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var viewModel = NotesViewModel()
     @State private var showingAddNote = false
+    @State private var deleteOffsets: IndexSet?
+    @State private var showDeleteAlert = false
 
     var body: some View {
         NavigationView {
@@ -11,7 +13,8 @@ struct ContentView: View {
                     NoteRow(note: note)
                 }
                 .onDelete { offsets in
-                    viewModel.deleteNotes(at: offsets)
+                    deleteOffsets = offsets
+                    showDeleteAlert = true
                 }
             }
             .navigationTitle("Catatan Saya")
@@ -29,6 +32,16 @@ struct ContentView: View {
                 AddNoteView { title, content in
                     addNote(title: title, content: content)
                 }
+            }
+            .alert("Hapus Catatan?", isPresented: $showDeleteAlert) {
+                Button("Hapus", role: .destructive) {
+                    if let offsets = deleteOffsets {
+                        viewModel.deleteNotes(at: offsets)
+                    }
+                }
+                Button("Batal", role: .cancel) {}
+            } message: {
+                Text("Catatan yang dihapus tidak dapat dikembalikan.")
             }
         }
     }
