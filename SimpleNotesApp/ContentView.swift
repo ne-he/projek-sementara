@@ -5,12 +5,27 @@ struct ContentView: View {
     @State private var showingAddNote = false
     @State private var deleteOffsets: IndexSet?
     @State private var showDeleteAlert = false
+    @State private var selectedNote: Note?
+    @State private var showingEditNote = false
+    @State private var searchText = ""
+
+    var filteredNotes: [Note] {
+        if searchText.isEmpty {
+            return viewModel.notes
+        }
+        return viewModel.notes.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
+    }
 
     var body: some View {
         NavigationView {
             List {
-                ForEach(viewModel.notes) { note in
+                ForEach(filteredNotes) { note in
                     NoteRow(note: note)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            selectedNote = note
+                            showingEditNote = true
+                        }
                 }
                 .onDelete { offsets in
                     deleteOffsets = offsets
@@ -18,6 +33,7 @@ struct ContentView: View {
                 }
             }
             .navigationTitle("Catatan Saya")
+            .searchable(text: $searchText, prompt: "Cari catatan...")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showingAddNote = true }) {
@@ -33,6 +49,13 @@ struct ContentView: View {
                     addNote(title: title, content: content)
                 }
             }
+            .sheet(isPresented: $showingEditNote) {
+                if let note = selectedNote {
+                    EditNoteView(note: note) { id, title, content in
+                        viewModel.updateNote(id: id, title: title, content: content)
+                    }
+                }
+            }
             .alert("Hapus Catatan?", isPresented: $showDeleteAlert) {
                 Button("Hapus", role: .destructive) {
                     if let offsets = deleteOffsets {
@@ -42,6 +65,14 @@ struct ContentView: View {
                 Button("Batal", role: .cancel) {}
             } message: {
                 Text("Catatan yang dihapus tidak dapat dikembalikan.")
+            }
+            .overlay {
+                if filteredNotes.isEmpty {
+                    Text("Belum ada catatan, tap + untuk menambah")
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                }
             }
         }
     }
