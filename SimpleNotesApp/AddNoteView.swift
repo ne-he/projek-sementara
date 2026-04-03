@@ -5,6 +5,8 @@ struct AddNoteView: View {
 
     @State private var titleInput: String = ""
     @State private var contentInput: String = ""
+    @State private var showAlert = false
+    @State private var alertMessage = ""
 
     var onSave: (String, String) -> Void
 
@@ -29,11 +31,25 @@ struct AddNoteView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Simpan") {
-                        onSave(titleInput, contentInput)
-                        dismiss()
+                        let trimmedTitle = titleInput.trimmingCharacters(in: .whitespaces)
+                        let trimmedContent = contentInput.trimmingCharacters(in: .whitespaces)
+                        if trimmedTitle.isEmpty {
+                            alertMessage = "Judul tidak boleh kosong."
+                            showAlert = true
+                        } else if trimmedContent.isEmpty {
+                            alertMessage = "Isi catatan minimal 1 karakter."
+                            showAlert = true
+                        } else {
+                            onSave(trimmedTitle, trimmedContent)
+                            dismiss()
+                        }
                     }
-                    .disabled(titleInput.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
+            }
+            .alert("Validasi Gagal", isPresented: $showAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(alertMessage)
             }
         }
     }
