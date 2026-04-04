@@ -4,9 +4,8 @@ private let savedNotesKey = "savedNotes"
 
 func saveToUserDefaults(notes: [Note]) {
     let encoder = JSONEncoder()
-    if let encoded = try? encoder.encode(notes) {
-        UserDefaults.standard.set(encoded, forKey: savedNotesKey)
-    }
+    guard let encoded = try? encoder.encode(notes) else { return }
+    UserDefaults.standard.set(encoded, forKey: savedNotesKey)
 }
 
 func loadFromUserDefaults() -> [Note]? {
