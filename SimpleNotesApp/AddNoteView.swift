@@ -5,10 +5,11 @@ struct AddNoteView: View {
 
     @State private var titleInput: String = ""
     @State private var contentInput: String = ""
+    @State private var selectedCategory: NoteCategory = .lainnya
     @State private var showAlert = false
     @State private var alertMessage = ""
 
-    var onSave: (String, String) -> Void
+    var onSave: (String, String, NoteCategory) -> Void
 
     var body: some View {
         NavigationView {
@@ -20,14 +21,20 @@ struct AddNoteView: View {
                     TextEditor(text: $contentInput)
                         .frame(minHeight: 150)
                 }
+                Section(header: Text("Kategori")) {
+                    Picker("Kategori", selection: $selectedCategory) {
+                        ForEach(NoteCategory.allCases, id: \.self) { cat in
+                            Label(cat.rawValue, systemImage: cat.icon).tag(cat)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
             }
             .navigationTitle("Catatan Baru")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Batal") {
-                        dismiss()
-                    }
+                    Button("Batal") { dismiss() }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Simpan") {
@@ -40,7 +47,7 @@ struct AddNoteView: View {
                             alertMessage = "Isi catatan minimal 1 karakter."
                             showAlert = true
                         } else {
-                            onSave(trimmedTitle, trimmedContent)
+                            onSave(trimmedTitle, trimmedContent, selectedCategory)
                             dismiss()
                         }
                     }

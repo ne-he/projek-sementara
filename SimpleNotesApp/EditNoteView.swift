@@ -4,18 +4,20 @@ struct EditNoteView: View {
     @Environment(\.dismiss) private var dismiss
 
     let note: Note
-    var onUpdate: (UUID, String, String) -> Void
+    var onUpdate: (UUID, String, String, NoteCategory) -> Void
 
     @State private var titleInput: String
     @State private var contentInput: String
+    @State private var selectedCategory: NoteCategory
     @State private var showAlert = false
     @State private var alertMessage = ""
 
-    init(note: Note, onUpdate: @escaping (UUID, String, String) -> Void) {
+    init(note: Note, onUpdate: @escaping (UUID, String, String, NoteCategory) -> Void) {
         self.note = note
         self.onUpdate = onUpdate
         _titleInput = State(initialValue: note.title)
         _contentInput = State(initialValue: note.content)
+        _selectedCategory = State(initialValue: note.category)
     }
 
     var body: some View {
@@ -27,6 +29,14 @@ struct EditNoteView: View {
                 Section(header: Text("Isi")) {
                     TextEditor(text: $contentInput)
                         .frame(minHeight: 150)
+                }
+                Section(header: Text("Kategori")) {
+                    Picker("Kategori", selection: $selectedCategory) {
+                        ForEach(NoteCategory.allCases, id: \.self) { cat in
+                            Label(cat.rawValue, systemImage: cat.icon).tag(cat)
+                        }
+                    }
+                    .pickerStyle(.segmented)
                 }
             }
             .navigationTitle("Edit Catatan")
@@ -46,7 +56,7 @@ struct EditNoteView: View {
                             alertMessage = "Isi catatan minimal 1 karakter."
                             showAlert = true
                         } else {
-                            onUpdate(note.id, trimmedTitle, trimmedContent)
+                            onUpdate(note.id, trimmedTitle, trimmedContent, selectedCategory)
                             dismiss()
                         }
                     }
