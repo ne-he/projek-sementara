@@ -4,7 +4,7 @@ import SwiftUI
 struct SimpleNotesApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            SplashView()
         }
     }
 }
