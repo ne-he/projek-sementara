@@ -5,6 +5,7 @@ struct ContentView: View {
     @State private var showingAddNote = false
     @State private var deleteOffsets: IndexSet?
     @State private var showDeleteAlert = false
+    @State private var showDeleteAllSheet = false
     @State private var selectedNote: Note?
     @State private var showingEditNote = false
     @State private var searchText = ""
@@ -13,7 +14,10 @@ struct ContentView: View {
         if searchText.isEmpty {
             return viewModel.notes
         }
-        return viewModel.notes.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
+        return viewModel.notes.filter {
+            $0.title.localizedCaseInsensitiveContains(searchText) ||
+            $0.content.localizedCaseInsensitiveContains(searchText)
+        }
     }
 
     var body: some View {
@@ -25,6 +29,15 @@ struct ContentView: View {
                         .onTapGesture {
                             selectedNote = note
                             showingEditNote = true
+                        }
+                        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                            ShareLink(
+                                item: "\(note.title)\n\n\(note.content)",
+                                preview: SharePreview(note.title)
+                            ) {
+                                Label("Bagikan", systemImage: "square.and.arrow.up")
+                            }
+                            .tint(.blue)
                         }
                 }
                 .onDelete { offsets in
@@ -43,16 +56,26 @@ struct ContentView: View {
                 ToolbarItem(placement: .navigationBarLeading) {
                     EditButton()
                 }
+                if !viewModel.notes.isEmpty {
+                    ToolbarItem(placement: .bottomBar) {
+                        Button(role: .destructive) {
+                            showDeleteAllSheet = true
+                        } label: {
+                            Label("Hapus Semua", systemImage: "trash")
+                                .foregroundColor(.red)
+                        }
+                    }
+                }
             }
             .sheet(isPresented: $showingAddNote) {
-                AddNoteView { title, content in
-                    addNote(title: title, content: content)
+                AddNoteView { title, content, category in
+                    viewModel.addNote(title: title, content: content, category: category)
                 }
             }
             .sheet(isPresented: $showingEditNote) {
                 if let note = selectedNote {
-                    EditNoteView(note: note) { id, title, content in
-                        viewModel.updateNote(id: id, title: title, content: content)
+                    EditNoteView(note: note) { id, title, content, category in
+                        viewModel.updateNote(id: id, title: title, content: content, category: category)
                     }
                 }
             }
@@ -66,20 +89,27 @@ struct ContentView: View {
             } message: {
                 Text("Catatan yang dihapus tidak dapat dikembalikan.")
             }
+            .confirmationDialog(
+                "Hapus semua catatan?",
+                isPresented: $showDeleteAllSheet,
+                titleVisibility: .visible
+            ) {
+                Button("Hapus Semua", role: .destructive) {
+                    viewModel.deleteAllNotes()
+                }
+                Button("Batal", role: .cancel) {}
+            } message: {
+                Text("Semua catatan akan dihapus permanen.")
+            }
             .overlay {
                 if filteredNotes.isEmpty {
-                    Text("Belum ada catatan, tap + untuk menambah")
+                    Text(searchText.isEmpty ? "Belum ada catatan, tap + untuk menambah" : "Tidak ada catatan yang cocok.")
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
                         .padding()
                 }
             }
         }
-    }
-
-    func addNote(title: String, content: String) {
-        let newNote = Note(title: title, content: content)
-        viewModel.notes.append(newNote)
     }
 }
 
@@ -88,25 +118,54 @@ struct NoteRow: View {
 
     static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "dd MMM yyyy"
+        f.dateStyle = .medium
+        f.timeStyle = .none
         return f
     }()
 
+    var categoryColor: Color {
+        switch note.category {
+        case .pribadi: return .blue
+        case .pekerjaan: return .orange
+        case .lainnya: return .green
+        }
+    }
+
+    var wasEdited: Bool {
+        abs(note.updatedAt.timeIntervalSince(note.createdAt)) > 1
+    }
+
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: "note.text")
-                .foregroundColor(.accentColor)
+            Image(systemName: note.category.icon)
+                .foregroundColor(categoryColor)
                 .frame(width: 32, height: 32)
-                .background(Color.accentColor.opacity(0.1))
+                .background(categoryColor.opacity(0.15))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(note.title)
-                    .font(.headline)
-                    .fontWeight(.bold)
-                Text(NoteRow.dateFormatter.string(from: note.createdAt))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                HStack {
+                    Text(note.title)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                    Spacer()
+                    Text(note.category.rawValue)
+                        .font(.caption2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(categoryColor.opacity(0.15))
+                        .foregroundColor(categoryColor)
+                        .clipShape(Capsule())
+                }
+                if wasEdited {
+                    Text("Diubah: \(NoteRow.dateFormatter.string(from: note.updatedAt))")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                } else {
+                    Text(NoteRow.dateFormatter.string(from: note.createdAt))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
             }
         }
         .padding(.vertical, 4)
